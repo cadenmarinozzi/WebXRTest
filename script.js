@@ -66,6 +66,11 @@ async function activateXR() {
 		const clone = flower.clone();
 		clone.position.copy(reticle.position);
 		scene.add(clone);
+
+		const shadowMesh = this.scene.children.find(
+			(c) => c.name === 'shadowMesh'
+		);
+		shadowMesh.position.y = clone.position.y;
 	});
 
 	const render = (time, frame) => {
