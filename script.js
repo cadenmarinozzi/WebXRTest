@@ -3,12 +3,14 @@ async function activateXR() {
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 
-	const webgl = canvas.getContext('webgl', { xrCompatible: true });
+	const webgl = canvas.getContext('webgl', {
+		xrCompatible: true,
+	});
 
 	const scene = new THREE.Scene();
 
 	const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
-	directionalLight.position.set(10, 15, 10);
+	directionalLight.position.set(0, 10, 0);
 	scene.add(directionalLight);
 
 	const renderer = new THREE.WebGLRenderer({
@@ -26,7 +28,11 @@ async function activateXR() {
 	camera.matrixAutoUpdate = false;
 
 	const session = await navigator.xr.requestSession('immersive-ar', {
-		requiredFeatures: ['hit-test'],
+		requiredFeatures: ['hit-test', 'depth-sensing'],
+		depthSensing: {
+			usagePreference: ['cpu-optimized', 'gpu-optimized'],
+			formatPreference: ['luminance-alpha', 'float32'],
+		},
 	});
 
 	session.updateRenderState({
@@ -84,6 +90,22 @@ async function activateXR() {
 		if (!pose) return;
 
 		const view = pose.views[0];
+		const depthInfo = frame.getDepthInformation(view);
+
+		if (!depthInfo) return;
+
+		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+		for (let x = 0; x < window.innerWidth; x += 20) {
+			for (let y = 0; y < window.innerHeight; y += 20) {
+				const depth = depthInfo.getDepthInMeters(x, y);
+
+				canvas.fillStyle = `rgba(${depth * 255}, ${depth * 255}, ${
+					depth * 255
+				}, 0.5)`;
+				canvas.fillRect(x, y, 1, 1);
+			}
+		}
 
 		const viewport = session.renderState.baseLayer.getViewport(view);
 		renderer.setSize(viewport.width, viewport.height);
